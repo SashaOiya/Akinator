@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -18,47 +17,63 @@ typedef char* elem_t;
 #define $
 #endif
 
-struct Knot {
+struct Node_t {
     elem_t data  = 0;
-    Knot *left   = 0;
-    Knot *right  = 0;
+    Node_t *left   = nullptr;
+    Node_t *right  = nullptr;
     int count    = 0;  // chislo vhogdeniy
 };
 
 struct Tree_t {
-    Knot *start = 0;
+    Node_t *start = nullptr;
+    Array
     //size_t capacity = 5;
 };
 
 enum Errors_t {
-    ERR_NO   = 0,
-    ERR_READ = 1,
-    ERR_FILE = 2
+    OK        = 0,
+    ERR_FREAD = 1,
+    ERR_INPUT = 2,
+    ERR_FOPEN = 3,
+    ERR_RLINE = 4,
+    ERR_CALLO = 5
 };
 
-void     Tree_Text_Dump  ( const struct Knot *tree_knot );
-void     File_Write_Node ( const struct Knot *tree_knot, FILE *tree );
-Errors_t File_Reader     ( FILE * f, struct Knot **tree );
-void     Akinator        ( struct Knot **tree );
-void     Tree_Dtor       ( struct Knot *tree );
-void     Tree_Dump_Link  ( FILE *tree_dump, const struct Knot *tree );
-void     Tree_Graph_Dump ( const struct Knot *tree );
-void     Tree_Dump_Body  ( FILE *tree_dump, const struct Knot *tree );
+const int DEFAULT_VALUE = 1; // choooooooooooooooooooooooooooooooo???
+
+Errors_t File_Reader     ( struct Node_t **tree, FILE * f );
+Errors_t Akinator        ( struct Node_t **tree );
+void     Tree_Dtor       ( struct Node_t *tree );
+
+void     Tree_Text_Dump  ( const struct Node_t *tree_knot );
+Errors_t Tree_Graph_Dump ( const struct Node_t *tree );
+void     Tree_Dump_Body  ( const struct Node_t *tree, FILE *tree_dump );
+void     File_Write_Node ( const struct Node_t *tree_knot, FILE *tree );
+
+int my_getline_file    ( char *buffer, FILE *f  );
+int my_getline_console ( char *buffer );
 
 int main ()
 {
     struct Tree_t tree = {};
-    FILE *tree_f = fopen ( "tree.txt", "r+" );
+    FILE *tree_f = fopen ( "tree.txt", "rw" );
+    if ( !tree_f ) {
+        perror ( "File opening failed" );
 
-    File_Reader ( tree_f, &tree.start );
+        return ERR_FOPEN;
+    }
 
-    Akinator ( &tree.start );
+    if ( File_Reader ( &tree.start, tree_f ) != OK ) {
 
-    fclose ( tree_f );
+        return EXIT_FAILURE;
+    }
 
-    FILE *tree2_f = fopen ( "tree.txt", "w" );
+    if ( Akinator ( &tree.start ) ) {
 
-    File_Write_Node ( tree.start, tree2_f );
+        return EXIT_FAILURE;
+    }
+
+    File_Write_Node ( tree.start, tree_f );
     Tree_Graph_Dump ( tree.start );
 
 $   Tree_Text_Dump ( tree.start );
@@ -70,110 +85,162 @@ $   Tree_Text_Dump ( tree.start );
     return 0;
 }
 
-Errors_t File_Reader ( FILE * f, struct Knot **tree )
+Errors_t File_Reader ( struct Node_t **tree, FILE * f )
 {
-    char word[100] = {};
-    //int size = 100;
+    const int size = 100;
+    char data[size] = {};
 
-    fscanf ( f, "%s", &word );
-    //getdelim ( &word, &size, "\n", f );
-    //getline  ();
+    int error_indicator = DEFAULT_VALUE;
 
-    if ( strcmp ( word, ")" ) == 0 ) {    //switch
-        fscanf ( f, "%s", &word );
+    if ( ( error_indicator = my_getline_file ( data, f ) ) == 0 || error_indicator == EOF ) {
+
+        return ERR_FREAD;
     }
-    if ( strcmp ( word, "(" ) == 0 ) {
-        *tree = (Knot *)calloc ( 1, sizeof ( Knot ) );
-$       fscanf ( f, "%s", &word );
+    if ( strcmp ( data, ")" ) == 0 ) {
+        error_indicator = my_getline_file ( data, f );
     }
-    if ( strcmp ( word, "\0" ) == 0 ||
-         strcmp ( word, "nil" ) == 0 ) {
+    if ( strcmp ( data, "(" ) == 0 ) {  // strncmp
+        *tree = (Node_t *)calloc ( 1, sizeof ( Node_t ) );
+        if ( !tree ) {
+            free ( tree );
 
-        return ERR_NO;
+            return ERR_CALLO;
+        }
+$       error_indicator = my_getline_file ( data, f );
     }
-$   (*tree)->data = strdup( word );
+    if ( error_indicator < DEFAULT_VALUE ) {  //????
 
-$   File_Reader ( f, &((*tree)->left) );
-    File_Reader ( f, &((*tree)->right) );
+        return ERR_FREAD;
+    }
+    if ( strcmp ( data, "\0" )  == 0 ||
+         strcmp ( data, "nil" ) == 0 ) {
 
-    fscanf ( f, "%s", &word ); //getline
+        return OK;
+    }
+$   (*tree)->data = strdup( data );
 
-    if ( strcmp ( word, ")" ) != 0 ) {
+$   File_Reader ( &((*tree)->left) , f ); //?????  //
+    File_Reader ( &((*tree)->right), f ); //
+
+    error_indicator = my_getline_file ( data, f );
+
+    if ( strcmp ( data, ")" ) != 0 || error_indicator == ERR_RLINE ) {
         printf ( "ERROR\n" );
 
-        return ERR_READ;
+        return ERR_FREAD;
     }
 
-    return ERR_NO;
+    return OK;
 }
 
-void Tree_Text_Dump ( const struct Knot *tree_knot )
+void Tree_Text_Dump ( const struct Node_t *tree_node )
 {
 
-    if ( tree_knot == nullptr) {
-        printf     ( " nil " );
+    if ( tree_node == nullptr) {
+        printf ( " nil " );
 
         return ;
     }
-    printf         ( " ( " );
-    printf         ( SPECIFIER, tree_knot->data );
+    printf ( " ( " );
+    printf ( SPECIFIER, tree_node->data );
 
-    Tree_Text_Dump ( tree_knot->left );
-    Tree_Text_Dump ( tree_knot->right );
+    Tree_Text_Dump ( tree_node->left  );
+    Tree_Text_Dump ( tree_node->right );
 
-    printf         ( " ) " );
+    printf ( " ) " );
 
 }
 
-void File_Write_Node  ( const struct Knot *tree_knot, FILE *tree_f )
+void File_Write_Node  ( const struct Node_t *tree_node, FILE *tree_f )
 {
-    if ( tree_knot == nullptr) {
-        fprintf     ( tree_f, "nil\n" );
+    if ( tree_node == nullptr ) {
+        fprintf ( tree_f, "nil\n" );
 
         return ;
     }
-    fprintf         ( tree_f, "(\n" );
-    fprintf         ( tree_f, SPECIFIER, tree_knot->data );
-    fprintf         ( tree_f, "\n" );
+    fprintf ( tree_f, "(\n" );
+    fprintf ( tree_f, SPECIFIER, tree_node->data );
+    fprintf ( tree_f, "\n"  );
 
-    File_Write_Node ( tree_knot->left, tree_f );
-    File_Write_Node ( tree_knot->right, tree_f );
+    File_Write_Node ( tree_node->left,  tree_f );
+    File_Write_Node ( tree_node->right, tree_f );
 
-    fprintf         ( tree_f,  ")\n" );
+    fprintf ( tree_f,  ")\n" );
 
 }
 
-void Akinator ( struct Knot **tree )
+Errors_t Akinator ( struct Node_t **tree )
 {
     printf ( SPECIFIER, (*tree)->data );
     printf ( "?\n" );
 
     char answer[10] = {};
-    scanf ( "%s", answer );
+    my_getline_console ( answer );
 
     if ( strcmp ( answer, "yes" ) == 0 ) {
-        printf ( "Stupid man, think of something more complicated! BUGAGA\n" );
-        txSpeak ( "Stupid man, think of something more complicated! BUGAGA\n" );
+        if ( (*tree)->right == nullptr )  {
+            printf ( "Stupid man, think of something more complicated! BUGAGA\n" );
+            txSpeak ( "Stupid man, think of something more complicated! BUGAGA\n" );
+
+            return OK;
+        }
+        else if ( (*tree)->right != nullptr ) {
+            Akinator ( &(*tree)->right );
+        }
     }
     else if ( strcmp ( answer, "no" ) == 0 ) {
         if ( (*tree)->left == nullptr ) {
-            printf ( "WHO ?\n" );
+            printf ( "Enter your answer option\n" );
 
-            char word[100] = {};
+            char true_answer[100] = {};
+$           if ( !my_getline_console ( true_answer ) ) {
+                printf ( "Input error\n" );
 
-            (*tree)->left = (Knot *)calloc ( 1, sizeof ( Knot ) );
-$           scanf ( "%s", &word );
-            ((*tree)->left)->data = strdup( word );
+                return ERR_INPUT;
+            }
+
+            printf ( "How does %s differ from %s? ?\n", true_answer, (*tree)->data );
+
+            char difference[100] = {};
+$           if ( !my_getline_console ( difference ) ) {
+                printf ( "Input error\n" );
+
+                return ERR_INPUT;
+            }
+
+$           char *temp = (*tree)->data;
+
+            (*tree)->left  = (Node_t *)calloc ( 1, sizeof ( Node_t ) );
+            (*tree)->right = (Node_t *)calloc ( 1, sizeof ( Node_t ) );
+            if ( !( (*tree)->right && (*tree)->left ) ) {
+                free ( (*tree)->right );
+                free ( (*tree)->left  );
+
+                return ERR_CALLO;
+            }
+
+$           ((*tree)->left)->data  = strdup ( temp );
+            ((*tree)->right)->data = strdup( true_answer );
+$           (*tree)->data          = strdup ( difference );
 
             printf ( "Now I know who it is. You can't beat me now \n" );
 
-            return ;
+            return OK;
         }
-        Akinator ( &(*tree)->left );
+        else {
+            Akinator ( &(*tree)->left );
+        }
     }
+    else {
+        printf ( "Sorry, but you have to answer \"yes\" or \"no\"" );
+
+        return ERR_INPUT;
+    }
+
+    return OK;
 }
 
-void Tree_Dtor ( struct Knot *tree )
+void Tree_Dtor ( struct Node_t *tree )
 {
     if ( tree != nullptr ) {
         Tree_Dtor ( tree->left  );
@@ -181,24 +248,22 @@ void Tree_Dtor ( struct Knot *tree )
 
         free ( tree );
     }
-
-    return ;
 }
 
-void Tree_Graph_Dump ( const struct Knot *tree )
+Errors_t Tree_Graph_Dump ( const struct Node_t *tree )
 {
     FILE *tree_dump = fopen ( "tree.dot", "w" );
+    if ( !tree_dump ) {
+        perror ( "File opening failed" );
+
+        return ERR_FOPEN;
+    }
 
     fprintf ( tree_dump, "digraph G { \n"
-                         "rankdir = LR;\n"
                          "node [shape = record];\n"
                          " %o ", tree );
 
-    Tree_Dump_Link ( tree_dump, tree );
-
-    fprintf ( tree_dump, "[arrowsize = 0.0, weight = 10000, color = \"#FFFFFF\"];\n" );
-
-    Tree_Dump_Body ( tree_dump, tree );
+    Tree_Dump_Body ( tree, tree_dump );
 
     fprintf ( tree_dump, "}\n" );
 
@@ -207,39 +272,75 @@ void Tree_Graph_Dump ( const struct Knot *tree )
     system ( "tree.png" );  */
 
     fclose ( tree_dump );
+
+    return OK;
 }
 
-void Tree_Dump_Link ( FILE *tree_dump, const struct Knot *tree )
-{
-    if ( tree == nullptr) {
-
-        return ;
-    }
-    fprintf ( tree_dump, "-> %o", tree );
-
-    Tree_Dump_Link ( tree_dump, tree->left );
-    Tree_Dump_Link ( tree_dump, tree->right );
-}
-
-void Tree_Dump_Body ( FILE *tree_dump, const struct Knot *tree )
+void Tree_Dump_Body ( const struct Node_t *tree, FILE *tree_dump )
 {
     if ( tree == nullptr) {
 
         return ;
     }
     fprintf ( tree_dump , " %o [shape = Mrecord, style = filled, fillcolor = lightpink "
-                          " label = \"data: %s | right: %s | left: %s\"];\n ",tree, tree->data,
-                                                                              tree->right,
-                                                                              tree->left  );
+                          " label = \"data: %s \"];\n",tree, tree->data );
     if ( tree->left != nullptr ) {
-        fprintf ( tree_dump, "%o -> %o", tree, tree->left );
+        fprintf ( tree_dump, "\"%o\" -> %o", tree, tree->left );
     }
     if ( tree->right != nullptr ) {
         fprintf ( tree_dump, "\n %o -> %o \n", tree, tree->right );
     }
 
-    Tree_Dump_Body ( tree_dump, tree->left );
-    Tree_Dump_Body ( tree_dump, tree->right );
+    Tree_Dump_Body ( tree->left,  tree_dump );
+    Tree_Dump_Body ( tree->right, tree_dump );
 }
+
+int my_getline_file ( char *buffer, FILE *fp )
+{
+    if ( !buffer ) {
+
+        return ERR_RLINE;
+    }
+
+    int temp;
+    size_t i = 0;
+
+    while ( ( temp = fgetc ( fp ) ) != EOF && temp != '\n' ) {
+        buffer[i++] = (char)temp;
+    }
+
+    if ( i > 0 || temp == '\n' ) {
+        buffer[i] = '\0';
+
+        return i;
+    }
+
+    return ERR_RLINE;
+}
+
+int my_getline_console ( char *buffer )
+{
+    if ( !buffer ) {
+
+        return ERR_RLINE;
+    }
+
+    int temp;
+    size_t i = 0;
+
+    while ( ( temp = getchar ( ) ) != '\n' ) {
+        buffer[i++] = (char)temp;
+    }
+
+    if ( i > 0 || temp == '\n' ) {
+        buffer[i] = '\0';
+
+        return i;
+    }
+
+    return ERR_RLINE;
+}
+
+
 
 
