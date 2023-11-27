@@ -26,7 +26,7 @@ struct Node_t {
 
 struct Tree_t {
     Node_t *start = nullptr;
-    Array
+    //Array
     //size_t capacity = 5;
 };
 
@@ -56,7 +56,7 @@ int my_getline_console ( char *buffer );
 int main ()
 {
     struct Tree_t tree = {};
-    FILE *tree_f = fopen ( "tree.txt", "rw" );
+    FILE *tree_f = fopen ( "tree.txt", "r" );
     if ( !tree_f ) {
         perror ( "File opening failed" );
 
@@ -72,8 +72,16 @@ int main ()
 
         return EXIT_FAILURE;
     }
+    free ( tree_f );
 
-    File_Write_Node ( tree.start, tree_f );
+    FILE *tree2_f = fopen ( "tree.txt", "w" );
+    if ( !tree2_f ) {
+        perror ( "File opening failed" );
+
+        return ERR_FOPEN;
+    }
+
+    File_Write_Node ( tree.start, tree2_f );
     Tree_Graph_Dump ( tree.start );
 
 $   Tree_Text_Dump ( tree.start );
@@ -101,8 +109,8 @@ Errors_t File_Reader ( struct Node_t **tree, FILE * f )
     }
     if ( strcmp ( data, "(" ) == 0 ) {  // strncmp
         *tree = (Node_t *)calloc ( 1, sizeof ( Node_t ) );
-        if ( !tree ) {
-            free ( tree );
+        if ( !(*tree) ) {
+            free ( *tree );
 
             return ERR_CALLO;
         }
