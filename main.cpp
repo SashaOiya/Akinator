@@ -1,11 +1,13 @@
 #include "akin.h"
 
-int main ()
+static const int DUMP_COUNTER = 100;
+
+int main ()     // srazy chackat dump new
 {
     struct Tree_t tree = {};
-    Stack_Data_t Stack = {};
+    Stack_t Stack = {};
 
-    StackCtor ( &Stack );
+    Stack_Ctor ( &Stack );
 
     FILE *tree_f = fopen ( "tree.txt", "r" );  // argv // rw fseek
     if ( !tree_f ) {
@@ -15,7 +17,7 @@ int main ()
     }
     int akin_mode = 0;
 
-    if ( File_Reader ( &tree.start, tree_f ) != OK_TREE ) {
+    if ( File_Reader ( &tree.start, tree_f ) != NO_ERR ) {
          // fclose
         return EXIT_FAILURE;
     }
@@ -27,8 +29,8 @@ int main ()
 
                 return EXIT_FAILURE;
             }
-            Tree_Verificator ( tree.start );
-            reverseArray ( Stack.data, Stack.capacity );
+            //Tree_Verificator ( tree.start );
+            reverse_array ( Stack.data, Stack.capacity );
         }
         else if ( akin_mode == MODE_DEFINE ) {
             Akinator_Definition ( tree.start, &Stack );
@@ -51,7 +53,7 @@ $   Tree_Text_Dump ( tree.start );
 
     fclose ( tree_f );
 
-    Tree_Dtor ( tree.start );
+    Akin_Tree_Dtor ( &tree );
 
     return 0;
 }
@@ -88,7 +90,7 @@ $       n_arg = my_getline_file ( data, f );
     if ( strcmp ( data, "\0" )  == 0 ||
          strcmp ( data, "nil" ) == 0 ) {
 
-        return OK_TREE;
+        return NO_ERR;
     }
     ++((*tree)->count);
 $   (*tree)->data = strdup( data );
@@ -98,18 +100,17 @@ $   File_Reader ( &((*tree)->left) , f ); //?????  //
 
     n_arg = my_getline_file ( data, f );
 
-    if ( strcmp ( data, ")" ) != 0 || n_arg == ERR_RLINE ) {
+    if ( *data != ')' || n_arg == ERR_RLINE ) {
         printf ( "ERROR\n" );
 
         return ERR_FREAD;
     }
 
-    return OK_TREE;
+    return NO_ERR;
 }
 
-void Tree_Text_Dump ( const struct Node_t *tree_node )
+void Tree_Text_Dump ( const struct Node_t *tree_node )   // +
 {
-
     if ( tree_node == nullptr) {
         printf ( " nil " );
 
@@ -125,7 +126,7 @@ void Tree_Text_Dump ( const struct Node_t *tree_node )
 
 }
 
-void File_Write_Node  ( const struct Node_t *tree_node, FILE *tree_f )
+void File_Write_Node  ( const struct Node_t *tree_node, FILE *tree_f )  // change file* to char*
 {
     if ( tree_node == nullptr ) {
         fprintf ( tree_f, "nil\n" );
@@ -143,91 +144,103 @@ void File_Write_Node  ( const struct Node_t *tree_node, FILE *tree_f )
 
 }
 
-Errors_t Akinator ( struct Node_t **tree, struct Stack_Data_t *Stack )
+Errors_t Akinator ( struct Node_t **tree, struct Stack_t *Stack )  // little letter
 {
+    assert ( tree != nullptr );
+    assert ( Stack != nullptr );
+
     print_color ( (*tree)->data, COLOR_YELLOW );
     print_color ( "?\n", COLOR_YELLOW );
 
     char answer[10] = {};
-    my_getline_console ( answer );
+    my_getline_console ( answer );   // weird
 
     if ( strcmp ( answer, "yes" ) == 0 ) {
         if ( (*tree)->right == nullptr )  {
             print_color ( "Stupid man, think of something more complicated! BUGAGA\n", COLOR_GREEN );
-            //txSpeak ( "Stupid man, think of something more complicated! BUGAGA\n" );
 
-            return OK_TREE;
+            return NO_ERR;
         }
         else if ( (*tree)->right != nullptr ) {
-            StackPush ( Stack, YES );
+            Stack_Push ( Stack, YES );    //
             Akinator ( &(*tree)->right, Stack );
         }
     }
-    else if ( strcmp ( answer, "no" ) == 0 ) {
+    else if ( strcmp ( answer, "no" ) == 0 ) {          // new function
         if ( (*tree)->left == nullptr ) {
-            print_color ( "Enter your answer option\n", COLOR_BLUE );
+            print_color ( "Enter your answer option\n", COLOR_BLUE );       //  separate func
+                                                                            //
+            char true_answer[100] = {};                                     //
+$           while ( !my_getline_console ( true_answer ) ) {                 //
+                printf ( "Incorrectly entered value. Please, try again\n" );//
+            }                                                               //
 
-            char true_answer[100] = {};
-$           if ( !my_getline_console ( true_answer ) ) {
-                printf ( "Input error\n" );
+            print_color ( "How does %s differ from %s?\n", COLOR_BLUE, true_answer, (*tree)->data );   //
+                                                                                                       //
+            char difference[100] = {};                                                                 //
+$           while ( !my_getline_console ( difference ) ) {                                             //
+                printf ( "Incorrectly entered value. Please, try again\n" );                           //
+            }                                                                                          //
 
-                return ERR_INPUT;
-            }
-
-            print_color ( "How does %s differ from %s?\n", COLOR_BLUE, true_answer, (*tree)->data );
-
-            char difference[100] = {};
-$           while ( !my_getline_console ( difference ) ) {  //
-                printf ( "Input error\n" );
-
-                return ERR_INPUT;
-            }
-
-            (*tree)->left  = (Node_t *)calloc ( 1, sizeof ( Node_t ) );
+            (*tree)->left  = (Node_t *)calloc ( 1, sizeof ( Node_t ) );   // for this
             (*tree)->right = (Node_t *)calloc ( 1, sizeof ( Node_t ) );
             if ( !( (*tree)->right && (*tree)->left ) ) {
-                free ( (*tree)->right );
                 free ( (*tree)->left  );
+                free ( (*tree)->right );
 
-                return ERR_CALLO;
+                print_color ( "Buffer memory allocation error."
+                              "Please, try again \n", COLOR_RED );
+
+                Akinator ( tree, Stack );
             }
 
-            char *temp = (*tree)->data;
-
-$           ((*tree)->left)->data  = strdup ( temp );
-            ((*tree)->right)->data = strdup( true_answer );
+$           ((*tree)->left)->data  = strdup ( (*tree)->data );
+            ((*tree)->right)->data = strdup ( true_answer );
 $           (*tree)->data          = strdup ( difference );
 
             print_color ( "Now I know who it is. You can't beat me now \n", COLOR_GREEN );
 
-            return OK_TREE;
+            return NO_ERR;
         }
         else {
-            StackPush ( Stack, NO );
+            Stack_Push ( Stack, NO );    //
             Akinator ( &(*tree)->left, Stack );
         }
     }
     else {
-        print_color ( "Sorry, but you have to answer \"yes\" or \"no\"", COLOR_RED );
-
-        return ERR_INPUT;
+        print_color ( "Sorry, but you have to answer \"yes\" or \"no\"\n", COLOR_RED );
+        Akinator ( tree, Stack );
     }
 
-    return OK_TREE;
+    return NO_ERR;
 }
 
-void Tree_Dtor ( struct Node_t *tree )
+void Akin_Tree_Dtor ( struct Tree_t *tree ) //struct File_t *file ) // +
 {
-    if ( tree != nullptr ) {
-        Tree_Dtor ( tree->left  );
-        Tree_Dtor ( tree->right );
+    Node_Free ( &(tree->start) );
+    //free ( file->out_buffer );
+    //fclose ( file->front_f );
+}
 
-        free ( tree );
+void Node_Free ( struct Node_t **tree_node ) // +
+{
+    if ( tree_node != nullptr && *tree_node != nullptr ) {
+        Node_Free ( &((*tree_node)->left) );
+        Node_Free ( &((*tree_node)->right));
+
+        (*tree_node)->left = nullptr;
+        (*tree_node)->right = nullptr;
+        free ( (*tree_node)->left );
+        free ( (*tree_node)->right );
+
+        *tree_node = nullptr;
     }
 }
 
-Errors_t Tree_Graph_Dump ( const struct Node_t *tree )
+Errors_t Tree_Graph_Dump ( const struct Node_t *tree ) // +
 {
+    assert ( tree != nullptr );
+
     FILE *tree_dump = fopen ( "tree.dot", "w" );
     if ( !tree_dump ) {
         perror ( "File opening failed" );
@@ -243,39 +256,41 @@ Errors_t Tree_Graph_Dump ( const struct Node_t *tree )
 
     fprintf ( tree_dump, "}\n" );
 
-    //system ( "del list.png" );
-    /*system ( "dot -T png tree.dot -o tree.png" );
-    system ( "tree.png" );  */
+    static int file_counter = 0;
+    char command_buffer[DUMP_COUNTER] = {};
+    fprintf( log(), "<img src=\"tree%d.png\" alt=\"-\" width=\"500\" height=\"600\">\n", file_counter );
+    sprintf( command_buffer, "dot -T png tree.dot -o logs/tree%d.png", file_counter++ );
+    system ( command_buffer );
 
-    fclose ( tree_dump );
-
-    return OK_TREE;
+    return NO_ERR;
 }
 
-void Tree_Dump_Body ( const struct Node_t *tree, FILE *tree_dump )
+void Tree_Dump_Body ( const struct Node_t *tree, FILE *tree_dump_f ) // +
 {
+    assert ( tree_dump_f != nullptr );
+
     if ( tree == nullptr) {
 
         return ;
     }
-    fprintf ( tree_dump , " \"%p\" [shape = Mrecord, style = filled, fillcolor = lightpink "
+    fprintf ( tree_dump_f , " \"%p\" [shape = Mrecord, style = filled, fillcolor = lightpink "
                           " label = \"data: %s \"];\n",tree, tree->data );
     if ( tree->left != nullptr ) {
-        fprintf ( tree_dump, "\"%p\" -> \"%p\" ", tree, tree->left );
+        fprintf ( tree_dump_f, "\"%p\" -> \"%p\" ", tree, tree->left );
     }
     if ( tree->right != nullptr ) {
-        fprintf ( tree_dump, "\n \"%p\" -> \"%p\" \n", tree, tree->right );
+        fprintf ( tree_dump_f, "\n \"%p\" -> \"%p\" \n", tree, tree->right );
     }
 
-    Tree_Dump_Body ( tree->left,  tree_dump );
-    Tree_Dump_Body ( tree->right, tree_dump );
+    Tree_Dump_Body ( tree->left,  tree_dump_f );
+    Tree_Dump_Body ( tree->right, tree_dump_f );
 }
 
-Errors_t Tree_Verificator ( struct Node_t *tree )
+Errors_t Tree_Verificator ( struct Node_t *tree ) // hyita
 {
     if ( tree == nullptr ) {
 
-        return OK_TREE;
+        return NO_ERR;
     }
     if ( tree->count != TREE_ONE_CALL ) {
         printf ( "There is a loop or an unused node \n" );
@@ -291,39 +306,25 @@ Errors_t Tree_Verificator ( struct Node_t *tree )
     Tree_Verificator ( tree->left  );
     Tree_Verificator ( tree->right );
 
-    return OK_TREE;
+    return NO_ERR;
 }
 
-void Akinator_Definition ( const struct Node_t *tree, struct Stack_Data_t *stack )
+void Akinator_Definition ( const struct Node_t *tree, struct Stack_t *stack )  // hyita
 {
     if ( tree == nullptr || stack->capacity == 0 ) {
 
         return;
     }
-    if ( StackPop ( stack ) == YES ) {
-        printf ( "%s ", tree->data );
+    if ( Stack_Pop ( stack ) == YES ) {
+        print_color ( tree->data, COLOR_PINK );
 
         Akinator_Definition ( tree->right, stack );
     }
-    else if ( StackPop ( stack ) == NO ) {
+    else if ( Stack_Pop ( stack ) == NO ) {
 
         Akinator_Definition ( tree->left, stack );
     }
 
-}
-
-void reverseArray ( int arr[], int size ) {
-    int start = 0;
-    int end = size - 1;
-
-    while (start < end) {
-        int temp = arr[start];
-        arr[start] = arr[end];
-        arr[end] = temp;
-
-        start++;
-        end--;
-    }
 }
 
 Mode_t interface_input ( )
@@ -361,7 +362,6 @@ $       return MODE_HELP;
         return MODE_DUMP;
     }
     else {
-
         print_color ( "This option was not found. Use the list of presented functions:\n", COLOR_RED );
 
         return MODE_ERROR;

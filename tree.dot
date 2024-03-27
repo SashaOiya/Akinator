@@ -1,10 +1,37 @@
 digraph G { 
-rankdir = LR;
 node [shape = record];
- 103546610 -> 103546610-> 103546640-> 103546310[arrowsize = 0.0, weight = 10000, color = "#FFFFFF"];
- 103546610 [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: Cat | right: HË | left: (Ë"];
- 103546610 -> 103546640
- 103546610 -> 103546310 
- 103546640 [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: dog | right: (null) | left: (null)"];
-  103546310 [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: Lox | right: (null) | left: (null)"];
- }
+ "00CD1618"  "00CD1618" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: Human "];
+"00CD1618" -> "00CD1638" 
+ "00CD1618" -> "00CD1830" 
+ "00CD1638" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: Cat "];
+"00CD1638" -> "00CD1668"  "00CD1668" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: less "];
+"00CD1668" -> "00CD1698" 
+ "00CD1668" -> "00CD1798" 
+ "00CD1698" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: bigger "];
+"00CD1698" -> "00CD16C8" 
+ "00CD1698" -> "00CD16F8" 
+ "00CD16C8" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: Dog "];
+ "00CD16F8" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: he is not alive "];
+"00CD16F8" -> "00CD1730" 
+ "00CD16F8" -> "00CD1768" 
+ "00CD1730" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: elephant  "];
+ "00CD1768" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: chair "];
+ "00CD1798" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: have feather "];
+"00CD1798" -> "00CD17D0" 
+ "00CD1798" -> "00CD1800" 
+ "00CD17D0" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: mice "];
+ "00CD1800" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: parrot "];
+ "00CD1830" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: vedet matan  "];
+"00CD1830" -> "00CD1868" 
+ "00CD1830" -> "00CD1898" 
+ "00CD1868" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: Ovchos "];
+ "00CD1898" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: vedet dop seminary "];
+"00CD1898" -> "00CD1980" 
+ "00CD1898" -> "00CD1C60" 
+ "00CD1980" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: woman "];
+"00CD1980" -> "00CD1900" 
+ "00CD1980" -> "00CD1940" 
+ "00CD1900" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: Petrovich "];
+ "00CD1940" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: Znamka "];
+ "00CD1C60" [shape = Mrecord, style = filled, fillcolor = lightpink  label = "data: Skybachevskiy  "];
+}
