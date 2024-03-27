@@ -7,29 +7,22 @@ int main ()
 
     StackCtor ( &Stack );
 
-    FILE *tree_f = fopen ( "tree.txt", "r" );
+    FILE *tree_f = fopen ( "tree.txt", "r" );  // argv // rw fseek
     if ( !tree_f ) {
         perror ( "File opening failed" );
 
         return ERR_FOPEN;
     }
-
-    bool start_indicator = true;
     int akin_mode = 0;
 
     if ( File_Reader ( &tree.start, tree_f ) != OK_TREE ) {
-
+         // fclose
         return EXIT_FAILURE;
     }
 
     do {
         akin_mode = interface_input ( );
-
-        if ( akin_mode == MODE_BYE  ) {
-
-            return 0;
-        }
-        else if ( akin_mode == MODE_START ) {
+        if ( akin_mode == MODE_START ) {
             if ( Akinator ( &tree.start, &Stack ) ) {
 
                 return EXIT_FAILURE;
@@ -63,9 +56,9 @@ $   Tree_Text_Dump ( tree.start );
     return 0;
 }
 
-Errors_t File_Reader ( struct Node_t **tree, FILE * f )
+Errors_t File_Reader ( struct Node_t **tree, FILE * f ) // *tree?
 {
-    const int size = 100;
+    const int size = 100;  // getfilesize
     char data[size] = {};
 
     int n_arg = 0;
@@ -74,10 +67,10 @@ Errors_t File_Reader ( struct Node_t **tree, FILE * f )
 
         return ERR_FREAD;
     }
-    if ( strcmp ( data, ")" ) == 0 ) {
+    if ( *data == ')' ) {  //
         n_arg = my_getline_file ( data, f );
     }
-    if ( strcmp ( data, "(" ) == 0 ) {  // strncmp
+    if ( *data == '(' ) {  //
         *tree = (Node_t *)calloc ( 1, sizeof ( Node_t ) );
         if ( !(*tree) ) {
             free ( *tree );
@@ -184,7 +177,7 @@ $           if ( !my_getline_console ( true_answer ) ) {
             print_color ( "How does %s differ from %s?\n", COLOR_BLUE, true_answer, (*tree)->data );
 
             char difference[100] = {};
-$           if ( !my_getline_console ( difference ) ) {
+$           while ( !my_getline_console ( difference ) ) {  //
                 printf ( "Input error\n" );
 
                 return ERR_INPUT;
@@ -278,66 +271,6 @@ void Tree_Dump_Body ( const struct Node_t *tree, FILE *tree_dump )
     Tree_Dump_Body ( tree->right, tree_dump );
 }
 
-int my_getline_file ( char *buffer, FILE *fp )
-{
-    if ( !buffer ) {
-
-        return ERR_RLINE;
-    }
-
-    int temp;
-    size_t i = 0;
-
-    while ( ( temp = fgetc ( fp ) ) != EOF && temp != '\n' ) {
-        buffer[i++] = (char)temp;
-    }
-
-    if ( i > 0 || temp == '\n' ) {
-        buffer[i] = '\0';
-
-        return i;
-    }
-
-    return ERR_RLINE;
-}
-
-int my_getline_console ( char *buffer )
-{
-    if ( !buffer ) {
-
-        return ERR_RLINE;
-    }
-    int temp = 0;
-    size_t i = 0;
-
-    while ( ( temp = getchar ( ) ) != '\n' ) {
-        buffer[i++] = (char)temp;
-    }
-    if ( i > 0 || temp == '\n' ) {
-        buffer[i] = '\0';
-
-        return i;
-    }
-
-    return ERR_RLINE;
-}
-
-void print_color ( const char *line, enum Color_t COLOR, ... )
-{
-    HANDLE hConsole = GetStdHandle ( STD_OUTPUT_HANDLE );
-
-    va_list args;
-    va_start ( args, COLOR );
-
-    SetConsoleTextAttribute ( hConsole, COLOR );
-
-    vprintf ( line, args );
-
-    SetConsoleTextAttribute ( hConsole, COLOR_WHITE );
-
-    va_end ( args );
-}
-
 Errors_t Tree_Verificator ( struct Node_t *tree )
 {
     if ( tree == nullptr ) {
@@ -399,7 +332,7 @@ $   const int max_buf_value = 100;
 $   char buf[max_buf_value] = {};
 
     print_color ( "Select mode\n", COLOR_BLUE );
-    scanf ( "%s", &buf );
+    scanf ( "%s", buf );
     getchar ( );
 
     if ( strcmp ( buf, "start" ) == 0 ) {  // &&   start
@@ -409,7 +342,7 @@ $   char buf[max_buf_value] = {};
     else if ( strcmp( buf, "help" ) == 0 ) {
 
         print_color ( "Here is a list of supported features :"
-                      "\n\n  start  \n\n  help  \n\n  bye  \n\n  definition  \n\n", COLOR_BLUE );
+                      "\n\n  start  \n\n  help  \n\n  bye  \n\n  definition  \n\n  dump \n\n", COLOR_BLUE );
 
 $       return MODE_HELP;
     }
@@ -420,6 +353,12 @@ $       return MODE_HELP;
     else if ( strcmp ( buf, "definition" ) == 0 ) {
 
         return MODE_DEFINE;
+    }
+    else if ( strcmp ( buf, "dump" ) == 0 ) {
+        system ( "dot -T png tree.dot -o tree.png" );
+        system ( "tree.png" );
+
+        return MODE_DUMP;
     }
     else {
 
